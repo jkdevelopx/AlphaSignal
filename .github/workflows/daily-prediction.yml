@@ -1,0 +1,24 @@
+name: Daily Prediction 08:00
+on:
+  schedule:
+    - cron: '0 1 * * *'
+  workflow_dispatch:
+jobs:
+  predict:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install deps
+        run: pip install xgboost pandas
+      - name: Run prediction
+        run: python src/predict_daily.py
+      - name: Commit CSV
+        run: |
+          git config user.name "AlphaBot"
+          git config user.email "bot@github.com"
+          git add predictions/latest_prediction.csv
+          git diff --staged --quiet || git commit -m "Daily prediction $(date)"
+          git push
