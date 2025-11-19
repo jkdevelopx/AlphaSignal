@@ -1,27 +1,35 @@
-name: Daily Prediction 08:00
+name: Daily Prediction 08:00 Thailand
+
 on:
   schedule:
-    - cron: '0 1 * * *'
-  workflow_dispatch:
+    - cron: '0 1 * * *'  # 01:00 UTC = 08:00 Thailand (ICT UTC+7)
+  workflow_dispatch:  # รันมือได้
+
+permissions:
+  contents: write  # ให้สิทธิ์ push ได้
+
 jobs:
   predict:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
+      
+      - name: Set up Python
+        uses: actions/setup-python@v5
         with:
           python-version: '3.12'
-      - name: Install deps
-        run: pip install xgboost pandas
+          
+      - name: Install dependencies
+        run: |
+          pip install --upgrade pip
+          pip install pandas xgboost sqlite3
+          
       - name: Run prediction
         run: python src/predict_daily.py
-      - name: Commit CSV
+        
+      - name: Commit and push CSV
         run: |
-          git config user.name "AlphaBot"
-          git config user.email "bot@github.com"
-          git add predictions/latest_prediction.csv
-          git diff --staged --quiet || git commit -m "Daily prediction $(date)"
-          git push
-    permissions:
-  contents: write
-  actions: read
+          git config --global user.name "AlphaSignal Bot"
+          git config --global user.email "bot@alphasignal.th"
+          git add predictions/latest_prediction.csv || echo "No CSV to add"
+          if git diff --staged --quiet; then echo "No changes"; else git commit -m "Daily prediction update $(date +'%Y-%m-%d %H:%M')"; git push; fi
