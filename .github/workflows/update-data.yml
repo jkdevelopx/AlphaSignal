@@ -22,3 +22,6 @@ jobs:
           git add data/market_data.db
           git diff --staged --quiet || git commit -m "Update data $(date)"
           git push
+permissions:
+  contents: write
+  actions: read

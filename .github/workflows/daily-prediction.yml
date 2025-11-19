@@ -22,3 +22,6 @@ jobs:
           git add predictions/latest_prediction.csv
           git diff --staged --quiet || git commit -m "Daily prediction $(date)"
           git push
+    permissions:
+  contents: write
+  actions: read
