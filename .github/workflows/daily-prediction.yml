@@ -2,11 +2,11 @@ name: Daily Prediction 08:00 Thailand
 
 on:
   schedule:
-    - cron: '0 1 * * *'  # 01:00 UTC = 08:00 Thailand (ICT UTC+7)
+    - cron: '0 1 * * *'  # 01:00 UTC = 08:00 Thailand
   workflow_dispatch:  # รันมือได้
 
 permissions:
-  contents: write  # ให้สิทธิ์ push ได้
+  contents: write  # สิทธิ์ push ได้
 
 jobs:
   predict:
@@ -22,7 +22,7 @@ jobs:
       - name: Install dependencies
         run: |
           pip install --upgrade pip
-          pip install pandas xgboost sqlite3
+          pip install pandas==2.3.3 xgboost==3.1.1  # เวอร์ชัน stable + ลบ sqlite3 แล้ว
           
       - name: Run prediction
         run: python src/predict_daily.py
