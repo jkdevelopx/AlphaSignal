@@ -1,4 +1,4 @@
-name: Update Portfolio Data Daily
+name: Update Portfolio Data + Telegram Alert
 
 on:
   schedule:
@@ -17,17 +17,14 @@ jobs:
         with:
           python-version: '3.12'
       - name: Install dependencies
-        run: pip install yfinance pandas --quiet
+        run: pip install yfinance pandas requests --quiet
       - name: Run Portfolio ETL
         run: python src/portfolio_etl.py
-      - name: Commit and push portfolio.db
+      - name: Commit portfolio.db
         run: |
           git config user.name "Portfolio Bot"
           git config user.email "bot@alphasignal.th"
           git add data/portfolio.db
-          if git diff --staged --quiet; then
-            echo "No changes in portfolio.db"
-          else
-            git commit -m "Update portfolio data $(date +'%Y-%m-%d')"
-            git push
-          fi
+          if git diff --staged --quiet; then echo "No changes"; else git commit -m "Update portfolio $(date +'%Y-%m-%d')"; git push; fi
+      - name: Send Telegram Alert
+        run: python src/send_portfolio_telegram.py
