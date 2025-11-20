@@ -1,35 +1,30 @@
-name: Daily Prediction 08:00 Thailand
+name: Daily Prediction with Chronos 08:00 Thailand
 
 on:
   schedule:
-    - cron: '0 1 * * *'  # 01:00 UTC = 08:00 Thailand
-  workflow_dispatch:  # รันมือได้
+    - cron: '0 1 * * *'  # 08:00 ไทย
+  workflow_dispatch:
 
 permissions:
-  contents: write  # สิทธิ์ push ได้
+  contents: write
 
 jobs:
   predict:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      
-      - name: Set up Python
-        uses: actions/setup-python@v5
+      - uses: actions/setup-python@v5
         with:
           python-version: '3.12'
-          
-      - name: Install dependencies
+      - name: Install deps
         run: |
           pip install --upgrade pip
-          pip install pandas==2.3.3 xgboost==3.1.1  # เวอร์ชัน stable + ลบ sqlite3 แล้ว
-          
-      - name: Run prediction
-        run: python src/predict_daily.py
-        
-      - name: Commit and push CSV
+          pip install pandas xgboost chronos-forecasting torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cpu  # CPU-only
+      - name: Run prediction with Chronos
+        run: python src/predict_daily_chronos.py  # ไฟล์ใหม่ที่ผมจะให้ด้านล่าง
+      - name: Commit CSV
         run: |
           git config --global user.name "AlphaSignal Bot"
           git config --global user.email "bot@alphasignal.th"
-          git add predictions/latest_prediction.csv || echo "No CSV to add"
-          if git diff --staged --quiet; then echo "No changes"; else git commit -m "Daily prediction update $(date +'%Y-%m-%d %H:%M')"; git push; fi
+          git add predictions/latest_prediction.csv
+          if git diff --staged --quiet; then echo "No changes"; else git commit -m "Chronos prediction $(date +'%Y-%m-%d')"; git push; fi
