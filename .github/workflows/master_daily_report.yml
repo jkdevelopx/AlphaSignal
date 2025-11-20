@@ -2,7 +2,7 @@ name: AlphaSignal Master Report 07:05
 
 on:
   schedule:
-    - cron: '5 0 * * *'  # 07:05 ไทย
+    - cron: '5 0 * * *'  # ทุกวัน 07:05 น. ไทย
   workflow_dispatch:
 
 jobs:
@@ -10,9 +10,14 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
-        with: python-version: '3.12'
-      - name: Install
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install dependencies
         run: pip install yfinance pandas requests numpy --quiet
-      - name: Run Master Report with Potential
+
+      - name: Run Master Report with Potential Price
         run: python src/daily_master_report.py
