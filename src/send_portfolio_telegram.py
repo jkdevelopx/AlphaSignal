@@ -4,36 +4,54 @@ import requests
 from datetime import datetime
 
 TOKEN = "8540357764:AAGMtyaYL9jLWVDA24LSGvIjIa92oE8QiFY"
-# หา CHAT_ID โดยส่งข้อความไปที่ bot ก่อน แล้ว forward ไป @userinfobot
-# หรือลองส่งข้อความทดสอบก่อน ถ้าไม่ขึ้นแปลว่า CHAT_ID ผิด
-# ตอนนี้ผมใส่ให้ก่อน (ถ้าไม่ขึ้นให้บอกผม เดี๋ยวช่วยหา)
-CHAT_ID = "7518743348"  # แก้เป็นของคุณจริง ๆ ถ้าต้องการ
+# ใส่ CHAT_ID ของคุณจริง ๆ ที่ได้จาก @userinfobot
+CHAT_ID = "123456789"  # แก้เป็นเลขจริงของคุณที่นี่ด้วยนะครับ
 
-db = "data/portfolio.db"
-conn = sqlite3.connect(db)
-df = pd.read_sql("""
-    SELECT symbol, close, date FROM price_data 
-    WHERE date = (SELECT MAX(date) FROM price_data)
-    ORDER BY symbol
-""", conn)
+def send_telegram(msg):
+    url = f"https://api.telegram.org/bot{TOKEN}/sendMessage"
+    try:
+        requests.post(url, data={"chat_id": CHAT_ID, "text": msg, "parse_mode": "Markdown"}, timeout=10)
+        print("Telegram sent successfully!")
+    except Exception as e:
+        print(f"Telegram failed: {e}")
+
+# เปิด connection ครั้งเดียว
+db_path = "data/portfolio.db"
+conn = sqlite3.connect(db_path)
+
+# ดึงข้อมูลล่าสุดของทุกตัว
+query = """
+SELECT symbol, close, date 
+FROM price_data 
+WHERE date = (SELECT MAX(date) FROM price_data WHERE symbol = price_data.symbol)
+ORDER BY symbol
+"""
+latest = pd.read_sql(query, conn)
+
+# สร้างข้อความ
+message = f"*AlphaSignal Portfolio Update*\n{datetime.now().strftime('%d %b %Y – %H:%M')} (TH)\n\n"
+
+for _, row in latest.iterrows():
+    sym = row['symbol']
+    price = row['close']
+    
+    # ดึงราคาเมื่อวาน (2 วันล่าสุด)
+    hist = pd.read_sql(f"""
+        SELECT close FROM price_data 
+        WHERE symbol = '{sym}' 
+        ORDER BY date DESC LIMIT 2
+    """, conn)
+    
+    if len(hist) == 2:
+        change = (hist.iloc[0]['close'] - hist.iloc[1]['close']) / hist.iloc[1]['close'] * 100
+        emoji = "Buy" if change > 2 else "Sell" if change < -2 else "Hold"
+        message += f"{emoji} *{sym}* `${price:.3f}` ({change:+.2f}%)\n"
+    else:
+        message += f"Hold *{sym}* `${price:.3f}`\n"
+
+message += "\n#AlphaSignal #Portfolio"
+
+# ปิด connection หลังใช้เสร็จ
 conn.close()
 
-# คำนวณ % เปลี่ยนจากเมื่อวาน (ถ้ามีข้อมูล)
-signals = []
-for sym in df['symbol'].unique():
-    data = pd.read_sql(f"SELECT date, close FROM price_data WHERE symbol='{sym}' ORDER BY date DESC LIMIT 2", conn)
-    if len(data) == 2:
-        change = (data.iloc[0]['close'] - data.iloc[1]['close']) / data.iloc[1]['close'] * 100
-        emoji = "Buy" if change > 1.5 else "Sell" if change < -1.5 else "Hold"
-        signals.append(f"{emoji} **{sym}** {data.iloc[0]['close']:.2f} ({change:+.2f}%)")
-    else:
-        signals.append(f"Hold **{sym}** {data.iloc[0]['close']:.2f}")
-
-message = f"*AlphaSignal Portfolio Update*\n{datetime.now().strftime('%Y-%m-%d %H:%M')} (TH)\n\n"
-message += "\n".join(signals[:16])  # 16 ตัวของคุณ
-message += f"\n\n#AlphaSignal #Portfolio"
-
-url = f"https://api.telegram.org/bot{TOKEN}/sendMessage"
-requests.post(url, data={"chat_id": CHAT_ID, "text": message, "parse_mode": "Markdown"})
-
-print("Telegram sent to portfolio group!")
+send_telegram(message)
