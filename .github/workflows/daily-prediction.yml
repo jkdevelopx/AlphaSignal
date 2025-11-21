@@ -21,7 +21,8 @@ jobs:
       - name: Install dependencies
         run: |
           pip install --upgrade pip
-          pip install pandas xgboost chronos-forecasting torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cpu
+          pip install pandas==2.3.3 xgboost==3.1.1 chronos-forecasting  # Default index
+          pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cpu  # PyTorch separate
           
       - name: Run prediction with Chronos
         run: python src/predict_daily_chronos.py
@@ -30,7 +31,7 @@ jobs:
         run: |
           git config --global user.name "AlphaSignal Bot"
           git config --global user.email "bot@alphasignal.th"
-          git pull origin main --rebase  # ดึงข้อมูลล่าสุดก่อน commit
+          git pull origin main --rebase
           git add predictions/latest_prediction.csv
           if git diff --staged --quiet; then
             echo "No changes"
