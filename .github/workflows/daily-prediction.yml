@@ -21,17 +21,18 @@ jobs:
       - name: Install dependencies
         run: |
           pip install --upgrade pip
-          pip install pandas==2.3.3 xgboost==3.1.1 chronos-forecasting  # Default index
-          pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cpu  # PyTorch separate
+          pip install pandas xgboost chronos-forecasting torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cpu
           
       - name: Run prediction with Chronos
         run: python src/predict_daily_chronos.py
         
-      - name: Commit and push CSV (with pull first)
+      - name: Commit and push CSV (with stash for unstaged changes)
         run: |
           git config --global user.name "AlphaSignal Bot"
           git config --global user.email "bot@alphasignal.th"
+          git stash push --include-untracked  # Save any unstaged changes
           git pull origin main --rebase
+          git stash pop  # Restore changes
           git add predictions/latest_prediction.csv
           if git diff --staged --quiet; then
             echo "No changes"
